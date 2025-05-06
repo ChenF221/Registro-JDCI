@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Participantes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background: linear-gradient(to right, #87ceeb, #b0e0e6); /* azul cielo */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            position: relative;
+        }
+
+
+        .container {
+            width: 400px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            position: relative;
+        }
+
+        h2 {
+            color: #064273;
+        }
+
+        input, select, button {
+            margin: 10px 0;
+            padding: 12px;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            background: linear-gradient(to right, #064273, #1c6ba0);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: linear-gradient(to right, #1c6ba0, #064273);
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Registro de Participantes JDCI</h2>
+
+        <select id="tipoUsuario" onchange="toggleCampos()">
+            <option value="Alumno">Alumno</option>
+            <option value="Profesor">Profesor</option>
+        </select>
+
+        <div id="camposAlumno">
+            <input type="text" id="nombre" placeholder="Nombre">
+            <input type="text" id="boleta" placeholder="Boleta (10 dígitos)" oninput="validarBoleta(this)">
+            <p class="error" id="errorBoleta">La boleta debe contener exactamente 10 números.</p>
+            <select id="tipo">
+                <option value="Ponencia">Ponencia</option>
+                <option value="Cartel">Cartel</option>
+                <option value="Asistente">Asistente</option>
+            </select>
+            <select id="beifi">
+                <option value="No">No BEIFI</option>
+                <option value="Si">BEIFI</option>
+            </select>
+        </div>
+
+        <div id="camposProfesor" style="display: none;">
+            <input type="text" id="nombreProfesor" placeholder="Nombre">
+            <input type="email" id="correoProfesor" placeholder="Correo electrónico">
+            <select id="tipoProfesor">
+                <option value="Ponencia">Ponencia</option>
+                <option value="Cartel">Cartel</option>
+                <option value="Asistente">Asistente</option>
+            </select>
+        </div>
+
+        <button onclick="registrar()">Registrar</button>
+    </div>
+
+    <script>
+        function toggleCampos() {
+            const tipoUsuario = document.getElementById("tipoUsuario").value;
+            document.getElementById("camposAlumno").style.display = tipoUsuario === "Alumno" ? "block" : "none";
+            document.getElementById("camposProfesor").style.display = tipoUsuario === "Profesor" ? "block" : "none";
+        }
+
+        function validarBoleta(input) {
+            let boleta = input.value.replace(/\D/g, '');
+            input.value = boleta.slice(0, 10);
+            document.getElementById("errorBoleta").style.display = (boleta.length !== 10);
+        }
+
+        function registrar() {
+            const tipoUsuario = document.getElementById("tipoUsuario").value;
+            let participante = {
+                nombre: "",
+                boleta: "N/A",
+                tipo: "N/A",
+                beifi: "N/A",
+                correo: "N/A",
+                asistencia: "Si",
+                tipoUsuario
+            };
+
+            if (tipoUsuario === "Alumno") {
+                participante.nombre = document.getElementById("nombre").value.trim();
+                participante.boleta = document.getElementById("boleta").value.trim();
+                participante.tipo = document.getElementById("tipo").value;
+                participante.beifi = document.getElementById("beifi").value;
+
+                if (!participante.nombre || participante.boleta.length !== 10 || isNaN(participante.boleta)) {
+                    alert("Completa todos los datos correctamente para el alumno.");
+                    return;
+                }
+            } else {
+                participante.nombre = document.getElementById("nombreProfesor").value.trim();
+                participante.correo = document.getElementById("correoProfesor").value.trim();
+                participante.tipo = document.getElementById("tipoProfesor").value;
+
+                const emailRegex = /^\S+@\S+\.\S+$/;
+                if (!participante.nombre || !emailRegex.test(participante.correo)) {
+                    alert("Completa todos los datos correctamente para el profesor.");
+                    return;
+                }
+            }
+
+            fetch('http://localhost:3000/agregar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(participante)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error del servidor: " + data.error);
+                } else {
+                    alert("Registro exitoso para " + participante.nombre);
+                    location.reload();
+                }
+            })
+            .catch(() => {
+                alert("Error de conexión. Intenta nuevamente.");
+            });
+        }
+    </script>
+
+</body>
+</html>
